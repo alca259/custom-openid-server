@@ -8,6 +8,14 @@ internal sealed class Program
     }
 
     public static IHostBuilder CreateHost(string[] args) => Host.CreateDefaultBuilder(args)
+        .ConfigureAppConfiguration((context, opt) =>
+        {
+            var env = context.HostingEnvironment;
+
+            opt.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables();
+        })
         .ConfigureWebHostDefaults(opt =>
         {
             opt.UseStartup<Startup>();

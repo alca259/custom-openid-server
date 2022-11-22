@@ -3,6 +3,7 @@ using AuthServer.Infrastructure.Domain.Identity;
 using AuthServer.Infrastructure.Domain.Identity.Stores;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Logging;
 using OpenIddict.Abstractions;
 
 namespace AuthServer;
@@ -30,27 +31,12 @@ public sealed class Startup
             opt.UseOpenIddict();
         });
 
-        services.Configure<IdentityOptions>(opt =>
-        {
-            opt.Password.RequiredLength = 0;
-            opt.Password.RequiredUniqueChars = 0;
-            opt.Password.RequireDigit = false;
-            opt.Password.RequireLowercase = false;
-            opt.Password.RequireNonAlphanumeric = false;
-            opt.Password.RequireUppercase = false;
-
-            // Mapeamos Identity para que use los nombres de los claims de OpenIDDict (aunque creo que son exactamente los mismos)
-            opt.ClaimsIdentity.UserNameClaimType = OpenIddictConstants.Claims.Username;
-            opt.ClaimsIdentity.UserIdClaimType = OpenIddictConstants.Claims.Subject;
-            opt.ClaimsIdentity.RoleClaimType = OpenIddictConstants.Claims.Role;
-            opt.ClaimsIdentity.EmailClaimType = OpenIddictConstants.Claims.Email;
-        });
-
         // Configuración de OpenIDDict server
         services.AddOpenIddict()
             .AddCore(opt =>
             {
-                opt.UseEntityFrameworkCore(); // Aquí se puede configurar que use otro contexto
+                opt.UseEntityFrameworkCore()
+                    .UseDbContext<AppDbContext>();
             })
             .AddServer(opt =>
             {
@@ -102,16 +88,52 @@ public sealed class Startup
             opt.DefaultChallengeScheme = OpenIddictConstants.Schemes.Bearer;
         });
 
+        services.Configure<IdentityOptions>(opt =>
+        {
+            opt.Password.RequiredLength = 0;
+            opt.Password.RequiredUniqueChars = 0;
+            opt.Password.RequireDigit = false;
+            opt.Password.RequireLowercase = false;
+            opt.Password.RequireNonAlphanumeric = false;
+            opt.Password.RequireUppercase = false;
+
+            opt.SignIn.RequireConfirmedAccount = false;
+            opt.SignIn.RequireConfirmedEmail = false;
+            opt.SignIn.RequireConfirmedPhoneNumber = false;
+
+            // Mapeamos Identity para que use los nombres de los claims de OpenIDDict (aunque creo que son exactamente los mismos)
+            opt.ClaimsIdentity.UserNameClaimType = OpenIddictConstants.Claims.Username;
+            opt.ClaimsIdentity.UserIdClaimType = OpenIddictConstants.Claims.Subject;
+            opt.ClaimsIdentity.RoleClaimType = OpenIddictConstants.Claims.Role;
+            opt.ClaimsIdentity.EmailClaimType = OpenIddictConstants.Claims.Email;
+        });
+
         services.AddIdentity<User, Role>()
             .AddSignInManager()
             .AddUserStore<AppUserStore>()
             .AddRoleStore<AppRoleStore>()
             .AddUserManager<UserManager<User>>()
             .AddRoleManager<RoleManager<Role>>();
+
+        services.AddCors(opt =>
+        {
+            opt.AddDefaultPolicy(cfg => cfg
+                .AllowCredentials()
+                .WithOrigins("https://localhost:5001")
+                .SetIsOriginAllowedToAllowWildcardSubdomains()
+                .AllowAnyHeader()
+                .AllowAnyMethod());
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        if (env.IsDevelopment())
+        {
+            IdentityModelEventSource.ShowPII = true;
+        }
+
+        app.UseCors();
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
@@ -119,9 +141,7 @@ public sealed class Startup
         app.UseAuthorization();
         app.UseEndpoints(opt =>
         {
-            opt.MapControllerRoute(
-                name: "default",
-                pattern: "{controller}/{action}/{id?}");
+            opt.MapDefaultControllerRoute();
         });
 
         #region Guarrada - Esto a un seed o a otro lado
@@ -133,7 +153,7 @@ public sealed class Startup
     private async Task CreateDefaultClient(IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        using var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await ctx.Database.EnsureCreatedAsync();
 
         var openIdManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
@@ -145,7 +165,7 @@ public sealed class Startup
             ClientId = "default-client",
             ClientSecret = "DB95C15D-54AE-4044-8E05-07044FD96943",
             DisplayName = "Auth Server Default Client",
-            Permissions = // Forma de asignar mágica (corramos un tupido velo e imaginamos que esto no está aquí)
+            Permissions = // Forma de asignar mágica (corramos un tupido velo e imaginamos que esto funciona así como si fuese un json)
             {
                 OpenIddictConstants.Permissions.Endpoints.Token,
                 OpenIddictConstants.Permissions.GrantTypes.Password
@@ -156,7 +176,7 @@ public sealed class Startup
     private async Task CreateSeedUser(IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        using var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
         var user = new User
         {
