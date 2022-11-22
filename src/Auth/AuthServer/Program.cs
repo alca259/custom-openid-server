@@ -1,17 +1,15 @@
-var builder = WebApplication.CreateBuilder(args);
+namespace AuthServer;
 
-// Add services to the container.
+internal sealed class Program
+{
+    public static async Task Main(string[] args)
+    {
+        await CreateHost(args).Build().RunAsync();
+    }
 
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+    public static IHostBuilder CreateHost(string[] args) => Host.CreateDefaultBuilder(args)
+        .ConfigureWebHostDefaults(opt =>
+        {
+            opt.UseStartup<Startup>();
+        });
+}
