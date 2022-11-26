@@ -1,6 +1,6 @@
 ﻿using AuthServer.Infrastructure.Data;
 using AuthServer.Infrastructure.Domain.Identity;
-using AuthServer.Infrastructure.Domain.Identity.Stores;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
@@ -32,6 +32,8 @@ public sealed class Startup
         });
 
         // Configuración de OpenIDDict server
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme);
+
         services.AddOpenIddict()
             .AddCore(opt =>
             {
@@ -41,29 +43,31 @@ public sealed class Startup
             .AddServer(opt =>
             {
                 // Endpoints que daremos de alta
+                opt.SetAuthorizationEndpointUris("/connect/authorize");
                 opt.SetTokenEndpointUris("/connect/token");
+                opt.SetLogoutEndpointUris("/connect/logout");
                 opt.SetUserinfoEndpointUris("/connect/userinfo");
-                //opt.SetLogoutEndpointUris(""); // TODO: Ver documentación
-                //opt.SetVerificationEndpointUris(""); // TODO: Ver documentación
-                //opt.SetAuthorizationEndpointUris(""); // TODO: Ver documentación
-                //opt.SetConfigurationEndpointUris(""); // TODO: Ver documentación
-                //opt.SetIntrospectionEndpointUris(""); // TODO: Ver documentación
-                //opt.SetRevocationEndpointUris(""); // TODO: Ver documentación
+                opt.SetVerificationEndpointUris("/connect/verify");
 
-                opt.AllowPasswordFlow();
+                opt.AllowPasswordFlow(); // Auth server
+                opt.AllowAuthorizationCodeFlow(); // SPA
+                opt.AllowClientCredentialsFlow(); // Entre APIs
                 opt.AllowRefreshTokenFlow();
-                // TODO: Aquí hay más interesantes, habrá que ver la documentación para ver como funcionan
 
-                //opt.UseReferenceAccessTokens(); // Guarda el token de acceso en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
-                //opt.UseReferenceRefreshTokens(); // Guarda el token de refresco en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
+                opt.UseReferenceAccessTokens(); // Guarda el token de acceso en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
+                opt.UseReferenceRefreshTokens(); // Guarda el token de refresco en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
+
+                // Force client applications to use Proof Key for Code Exchange (PKCE).
+                // opt.RequireProofKeyForCodeExchange();
 
                 // Registro de scopes
-                opt.RegisterScopes(OpenIddictConstants.Permissions.Scopes.Email,
+                opt.RegisterScopes(
+                    OpenIddictConstants.Permissions.Scopes.Email,
                     OpenIddictConstants.Permissions.Scopes.Roles,
                     OpenIddictConstants.Permissions.Scopes.Profile);
 
                 // Lifetime de los tokens
-                opt.SetAccessTokenLifetime(TimeSpan.FromMinutes(30));
+                opt.SetAccessTokenLifetime(TimeSpan.FromMinutes(5));
                 opt.SetRefreshTokenLifetime(TimeSpan.FromDays(1));
 
                 // Para development
@@ -74,19 +78,19 @@ public sealed class Startup
                 }
 
                 opt.UseAspNetCore()
-                    .EnableTokenEndpointPassthrough(); // No me he enterado de que hace exactamente, ver documentación o ir probando
+                    .EnableAuthorizationEndpointPassthrough()
+                    .EnableTokenEndpointPassthrough()
+                    .EnableLogoutEndpointPassthrough()
+                    .EnableUserinfoEndpointPassthrough()
+                    .EnableVerificationEndpointPassthrough()
+                    //.DisableTransportSecurityRequirement() // Durante el desarrollo se puede deshabilitar Https
+                    .EnableStatusCodePagesIntegration();
             })
             .AddValidation(opt =>
             {
                 opt.UseLocalServer();
                 opt.UseAspNetCore();
             });
-
-        services.AddAuthentication(opt =>
-        {
-            opt.DefaultScheme = OpenIddictConstants.Schemes.Bearer;
-            opt.DefaultChallengeScheme = OpenIddictConstants.Schemes.Bearer;
-        });
 
         services.Configure<IdentityOptions>(opt =>
         {
@@ -109,21 +113,23 @@ public sealed class Startup
         });
 
         services.AddIdentity<User, Role>()
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders()
             .AddSignInManager()
-            .AddUserStore<AppUserStore>()
-            .AddRoleStore<AppRoleStore>()
             .AddUserManager<UserManager<User>>()
             .AddRoleManager<RoleManager<Role>>();
 
         services.AddCors(opt =>
         {
-            opt.AddDefaultPolicy(cfg => cfg
+            opt.AddPolicy("AllowLocal", cfg => cfg
                 .AllowCredentials()
-                .WithOrigins("https://localhost:5001")
+                .WithOrigins("https://localhost:5001", "https://localhost:5101", "https://localhost:5201")
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyHeader()
                 .AllowAnyMethod());
         });
+
+        services.AddHostedService<SeedInitTask>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -131,74 +137,28 @@ public sealed class Startup
         if (env.IsDevelopment())
         {
             IdentityModelEventSource.ShowPII = true;
+            app.UseDeveloperExceptionPage();
         }
 
-        app.UseCors();
+        app.UseCors("AllowLocal");
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
+        app.UseRequestLocalization(opt =>
+        {
+            opt.AddSupportedCultures("es-ES");
+            opt.AddSupportedUICultures("es-ES");
+            opt.SetDefaultCulture("es-ES");
+        });
         app.UseAuthorization();
+
         app.UseEndpoints(opt =>
         {
+            opt.MapControllers();
             opt.MapDefaultControllerRoute();
         });
 
-        #region Guarrada - Esto a un seed o a otro lado
-        CreateDefaultClient(app).GetAwaiter().GetResult();
-        CreateSeedUser(app).GetAwaiter().GetResult();
-        #endregion
-    }
-
-    private async Task CreateDefaultClient(IApplicationBuilder app)
-    {
-        using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await ctx.Database.EnsureCreatedAsync();
-
-        var openIdManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-        var existDefaultAppClient = await openIdManager.FindByClientIdAsync("default-client");
-        if (existDefaultAppClient != null) return;
-
-        await openIdManager.CreateAsync(new OpenIddictApplicationDescriptor
-        {
-            ClientId = "default-client",
-            ClientSecret = "DB95C15D-54AE-4044-8E05-07044FD96943",
-            DisplayName = "Auth Server Default Client",
-            Permissions = // Forma de asignar mágica (corramos un tupido velo e imaginamos que esto funciona así como si fuese un json)
-            {
-                OpenIddictConstants.Permissions.Endpoints.Token,
-                OpenIddictConstants.Permissions.GrantTypes.Password
-            }
-        });
-    }
-
-    private async Task CreateSeedUser(IApplicationBuilder app)
-    {
-        using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-
-        var user = new User
-        {
-            UserName = "administrator",
-            FkUserRoles = new List<UserRole>
-            {
-                new UserRole
-                {
-                    FkRole = new Role
-                    {
-                        Name = "admin",
-                        NormalizedName = "ADMIN"
-                    }
-                }
-            }
-        };
-
-        var existUser = userManager.FindByNameAsync(user.UserName);
-        if (existUser != null) return;
-
-        var pass = userManager.PasswordHasher.HashPassword(user, "demo");
-        user.PasswordHash = pass;
-        await userManager.CreateAsync(user);
+        app.UseWelcomePage();
     }
 }
