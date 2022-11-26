@@ -47,7 +47,6 @@ public sealed class Startup
                 opt.SetTokenEndpointUris("/connect/token");
                 opt.SetLogoutEndpointUris("/connect/logout");
                 opt.SetUserinfoEndpointUris("/connect/userinfo");
-                opt.SetVerificationEndpointUris("/connect/verify");
 
                 opt.AllowPasswordFlow(); // Auth server
                 opt.AllowAuthorizationCodeFlow(); // SPA
@@ -82,7 +81,6 @@ public sealed class Startup
                     .EnableTokenEndpointPassthrough()
                     .EnableLogoutEndpointPassthrough()
                     .EnableUserinfoEndpointPassthrough()
-                    .EnableVerificationEndpointPassthrough()
                     //.DisableTransportSecurityRequirement() // Durante el desarrollo se puede deshabilitar Https
                     .EnableStatusCodePagesIntegration();
             })
