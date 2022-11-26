@@ -181,7 +181,7 @@ public sealed class AuthorizeController : Controller
     }
 
     [Authorize]
-    [HttpPost("/connect/authorize"), ValidateAntiForgeryToken]
+    [HttpPost("/connect/authorize/accept"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Accept()
     {
         var request = HttpContext.GetOpenIddictServerRequest() ??
@@ -256,6 +256,6 @@ public sealed class AuthorizeController : Controller
     /// </summary>
     /// <returns></returns>
     [Authorize]
-    [HttpPost("/connect/authorize"), ValidateAntiForgeryToken]
+    [HttpPost("/connect/authorize/deny"), ValidateAntiForgeryToken]
     public IActionResult Deny() => Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 }
