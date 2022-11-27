@@ -1,0 +1,9 @@
+<div class="container">
+    <a class="nav-link" *ngIf="!isAuthenticated" (click)="login()">LOGIN</a>
+    <a class="nav-link" *ngIf="isAuthenticated" (click)="logoffAndRevokeTokens()">LOGOUT</a>
+
+    <router-outlet></router-outlet>
+
+</div>
+
+

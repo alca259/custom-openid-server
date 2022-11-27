@@ -48,22 +48,22 @@ public sealed class Startup
                 opt.SetLogoutEndpointUris("/connect/logout");
                 opt.SetUserinfoEndpointUris("/connect/userinfo");
 
+                // Registro de scopes que el servidor de OpenID conoce para todos los clientes.
+                // Deben registrarse antes de configurar flujos (GitHub Issue #835)
+                opt.RegisterScopes(
+                    OpenIddictConstants.Scopes.Email,
+                    OpenIddictConstants.Scopes.Roles,
+                    OpenIddictConstants.Scopes.Profile,
+                    OpenIddictConstants.Scopes.OfflineAccess,
+                    "API");
+
                 opt.AllowPasswordFlow(); // Auth server
                 opt.AllowAuthorizationCodeFlow(); // SPA
                 opt.AllowClientCredentialsFlow(); // Entre APIs
-                opt.AllowRefreshTokenFlow();
+                opt.AllowRefreshTokenFlow(); // Para poder renovar el token en OfflineAccess
 
                 opt.UseReferenceAccessTokens(); // Guarda el token de acceso en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
                 opt.UseReferenceRefreshTokens(); // Guarda el token de refresco en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
-
-                // Force client applications to use Proof Key for Code Exchange (PKCE).
-                // opt.RequireProofKeyForCodeExchange();
-
-                // Registro de scopes
-                opt.RegisterScopes(
-                    OpenIddictConstants.Permissions.Scopes.Email,
-                    OpenIddictConstants.Permissions.Scopes.Roles,
-                    OpenIddictConstants.Permissions.Scopes.Profile);
 
                 // Lifetime de los tokens
                 opt.SetAccessTokenLifetime(TimeSpan.FromMinutes(5));
@@ -83,6 +83,33 @@ public sealed class Startup
                     .EnableUserinfoEndpointPassthrough()
                     //.DisableTransportSecurityRequirement() // Durante el desarrollo se puede deshabilitar Https
                     .EnableStatusCodePagesIntegration();
+
+                // Force client applications to use Proof Key for Code Exchange (PKCE).
+                // Ojo, aplica a todos los clientes. Si es para un cliente concreto, aplicar directamente sobre él.
+                // opt.RequireProofKeyForCodeExchange();
+
+                // Note: if you don't want to specify a client_id when sending
+                // a token or revocation request, uncomment the following line:
+                //
+                // opt.AcceptAnonymousClients();
+
+                // Note: if you want to process authorization and token requests
+                // that specify non-registered scopes, uncomment the following line:
+                //
+                // opt.DisableScopeValidation();
+
+                // Note: if you don't want to use permissions, you can disable
+                // permission enforcement by uncommenting the following lines:
+                //
+                // opt.IgnoreEndpointPermissions()
+                //        .IgnoreGrantTypePermissions()
+                //        .IgnoreResponseTypePermissions()
+                //        .IgnoreScopePermissions();
+
+                // Note: when issuing access tokens used by third-party APIs
+                // you don't own, you can disable access token encryption:
+                //
+                // opt.DisableAccessTokenEncryption();
             })
             .AddValidation(opt =>
             {
@@ -121,7 +148,7 @@ public sealed class Startup
         {
             opt.AddPolicy("AllowLocal", cfg => cfg
                 .AllowCredentials()
-                .WithOrigins("https://localhost:5001", "https://localhost:5101", "https://localhost:5201")
+                .WithOrigins("https://localhost:5001", "https://localhost:5101", "https://localhost:5201", "http://localhost:6001")
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyHeader()
                 .AllowAnyMethod());
