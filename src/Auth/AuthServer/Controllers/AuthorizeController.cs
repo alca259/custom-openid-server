@@ -180,8 +180,8 @@ public sealed class AuthorizeController : Controller
         }
     }
 
-    [Authorize]
-    [HttpPost("/connect/authorize/accept"), ValidateAntiForgeryToken]
+    [Authorize, FormValueRequired("submit.Accept")]
+    [HttpPost("/connect/authorize"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Accept()
     {
         var request = HttpContext.GetOpenIddictServerRequest() ??
@@ -255,7 +255,7 @@ public sealed class AuthorizeController : Controller
     /// to redirect the user agent to the client application using the appropriate response_mode.
     /// </summary>
     /// <returns></returns>
-    [Authorize]
-    [HttpPost("/connect/authorize/deny"), ValidateAntiForgeryToken]
+    [Authorize, FormValueRequired("submit.Deny")]
+    [HttpPost("/connect/authorize"), ValidateAntiForgeryToken]
     public IActionResult Deny() => Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 }
