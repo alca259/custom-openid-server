@@ -17,6 +17,7 @@ import { AuthModule, LogLevel } from 'angular-auth-oidc-client';
       HttpClientModule,
       AuthModule.forRoot({
         config: {
+            triggerAuthorizationResultEvent: true,
             authority: 'https://localhost:5001',
             redirectUrl: 'http://localhost:6001/signin-oidc',
             postLogoutRedirectUri: 'http://localhost:6001/signout-oidc',
@@ -25,6 +26,7 @@ import { AuthModule, LogLevel } from 'angular-auth-oidc-client';
             scope: 'openid profile email API offline_access',
             responseType: 'code',
             silentRenew: true,
+            silentRenewUrl: 'http://localhost:6001/silent-renew.html',
             renewTimeBeforeTokenExpiresInSeconds: 10,
             useRefreshToken: true,
             logLevel: LogLevel.Debug,

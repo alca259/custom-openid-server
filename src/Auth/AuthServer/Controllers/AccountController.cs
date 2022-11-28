@@ -34,7 +34,9 @@ public sealed class AccountController : Controller
     {
         var vm = new LoginViewModel
         {
-            ReturnUrl = returnUrl
+            ReturnUrl = returnUrl,
+            Userlogin = "administrator",
+            Password = "demo"
         };
 
         var hasReturnUrl = Request.QueryString.Value?.Contains("ReturnUrl") ?? false;

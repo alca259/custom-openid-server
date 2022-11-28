@@ -63,7 +63,7 @@ public sealed class SeedInitTask : IHostedService
             ClientId = "angular-client",
             ClientSecret = "D1D312D8-1FEB-4D9B-B0EB-169E73F0987B",
             DisplayName = "Auth Server Angular Client",
-            ConsentType = ConsentTypes.Implicit,
+            ConsentType = ConsentTypes.Explicit,
             PostLogoutRedirectUris =
             {
                 new Uri("http://localhost:6001/signout-oidc"),
