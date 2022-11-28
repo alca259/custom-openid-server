@@ -1,0 +1,22 @@
+﻿@model LoginViewModel
+
+<form asp-action="Login" asp-controller="Account" asp-antiforgery="true">
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div>
+        <input asp-for="Userlogin" autofocus />
+        <label asp-for="Userlogin">Usuario</label>
+    </div>
+    <div>
+        <input type="password" asp-for="Password" autocomplete="off" />
+        <label asp-for="Password">Contraseña</label>
+    </div>
+    <div>
+        <label asp-for="RememberLogin" class="checkbox">
+            <input asp-for="RememberLogin"/><strong>Recordarme</strong>
+        </label>
+    </div>
+    <div asp-validation-summary="All"></div>
+    <div>
+        <button name="button" value="login" onclick="this.disabled='true';this.form.submit();">Login</button>
+    </div>
+</form>

@@ -1,15 +1,12 @@
 ﻿using AuthServer.Infrastructure.Data.Mappings;
 using AuthServer.Infrastructure.Domain.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuthServer.Infrastructure.Data;
 
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext : IdentityDbContext<User, Role, long, UserClaim, UserRole, UserLogin, RoleClaim, UserToken>
 {
-    public DbSet<User> Users { get; set; }
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
-
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
 
@@ -25,8 +22,12 @@ public sealed class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new UsersMapping());
+        modelBuilder.ApplyConfiguration(new RoleClaimsMapping());
         modelBuilder.ApplyConfiguration(new RolesMapping());
+        modelBuilder.ApplyConfiguration(new UsersMapping());
+        modelBuilder.ApplyConfiguration(new UserClaimsMapping());
+        modelBuilder.ApplyConfiguration(new UserLoginsMapping());
         modelBuilder.ApplyConfiguration(new UserRolesMapping());
+        modelBuilder.ApplyConfiguration(new UserTokensMapping());
     }
 }

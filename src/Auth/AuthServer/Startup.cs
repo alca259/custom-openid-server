@@ -1,5 +1,6 @@
 ﻿using AuthServer.Infrastructure.Data;
 using AuthServer.Infrastructure.Domain.Identity;
+using AuthServer.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,8 @@ public sealed class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers();
+        services.AddMvcCore()
+            .AddRazorViewEngine();
 
         services.AddDbContext<AppDbContext>(opt =>
         {
@@ -154,6 +157,8 @@ public sealed class Startup
                 .AllowAnyMethod());
         });
 
+        services.AddScoped<ILoginService<User>, LoginService>();
+
         services.AddHostedService<SeedInitTask>();
     }
 
@@ -183,7 +188,5 @@ public sealed class Startup
             opt.MapControllers();
             opt.MapDefaultControllerRoute();
         });
-
-        app.UseWelcomePage();
     }
 }

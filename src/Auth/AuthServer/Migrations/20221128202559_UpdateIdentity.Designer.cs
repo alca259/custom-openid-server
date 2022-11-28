@@ -4,6 +4,7 @@ using AuthServer.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AuthServer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221128202559_UpdateIdentity")]
+    partial class UpdateIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,35 +56,6 @@ namespace AuthServer.Migrations
                         .HasDatabaseName("IX_Roles_Name");
 
                     b.ToTable("Role", "Identity");
-                });
-
-            modelBuilder.Entity("AuthServer.Infrastructure.Domain.Identity.RoleClaim", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("Id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ClaimType");
-
-                    b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ClaimValue");
-
-                    b.Property<long>("RoleId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("RoleId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("IX_Role_Claims");
-
-                    b.ToTable("Role_Claim", "Identity");
                 });
 
             modelBuilder.Entity("AuthServer.Infrastructure.Domain.Identity.User", b =>
@@ -189,31 +162,6 @@ namespace AuthServer.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("User_Claim", "Identity");
-                });
-
-            modelBuilder.Entity("AuthServer.Infrastructure.Domain.Identity.UserLogin", b =>
-                {
-                    b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)")
-                        .HasColumnName("LoginProvider");
-
-                    b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)")
-                        .HasColumnName("ProviderKey");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("UserId");
-
-                    b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ProviderDisplayName");
-
-                    b.HasKey("LoginProvider", "ProviderKey", "UserId");
-
-                    b.ToTable("User_Login", "Identity");
                 });
 
             modelBuilder.Entity("AuthServer.Infrastructure.Domain.Identity.UserRole", b =>
