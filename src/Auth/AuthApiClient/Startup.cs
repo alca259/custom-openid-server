@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Client;
 using OpenIddict.Validation.AspNetCore;
@@ -12,8 +13,6 @@ namespace AuthApiClient;
 public sealed class Startup
 {
     private const string AUTH_URI = "https://localhost:5001";
-    public const string API_CLIENT_ID = "default-api-client";
-    public const string API_CLIENT_SECRET = "11111111-54AE-4044-8E05-07044FD96943";
     public const string SWAGGER_CLIENT_ID = "swagger-client";
     public const string SWAGGER_CLIENT_SECRET = "22222222-1FEB-4D9B-B0EB-169E73F0987B";
 
@@ -91,8 +90,8 @@ public sealed class Startup
                 options.AddRegistration(new OpenIddictClientRegistration
                 {
                     Issuer = new Uri(AUTH_URI, UriKind.Absolute),
-                    ClientId = API_CLIENT_ID,
-                    ClientSecret = API_CLIENT_SECRET,
+                    ClientId = SWAGGER_CLIENT_ID,
+                    ClientSecret = SWAGGER_CLIENT_SECRET,
                     Scopes =
                     {
                         "API"
@@ -140,14 +139,14 @@ public sealed class Startup
                             new Uri($"{apiTokenUrl}"),
 
                         Scopes = new Dictionary<string, string>
-                            {
-                                { scopeName, basePath }
-                            }
+                        {
+                            { scopeName, basePath }
+                        }
                     }
                 },
                 Type = SecuritySchemeType.OAuth2,
                 In = ParameterLocation.Header,
-                Name = "Authorization"
+                Name = HeaderNames.Authorization
 
             });
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -179,7 +178,7 @@ public sealed class Startup
 
             c.OAuthClientId(SWAGGER_CLIENT_ID);
             c.OAuthAppName($"API Swagger UI");
-            c.OAuthClientSecret(API_CLIENT_SECRET);
+            c.OAuthClientSecret(SWAGGER_CLIENT_SECRET);
 
             c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
         });
