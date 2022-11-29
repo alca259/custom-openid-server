@@ -67,6 +67,7 @@ public sealed class Startup
                 opt.AllowAuthorizationCodeFlow(); // SPA
                 opt.AllowClientCredentialsFlow(); // Entre APIs
                 opt.AllowRefreshTokenFlow(); // Para poder renovar el token en OfflineAccess
+                opt.AllowImplicitFlow(); // Para swagger
 
                 opt.UseReferenceAccessTokens(); // Guarda el token de acceso en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.
                 opt.UseReferenceRefreshTokens(); // Guarda el token de refresco en BD cuando llenamos de demasiada información de claims. Si no va a ser así, mejor deshabilitarlo.

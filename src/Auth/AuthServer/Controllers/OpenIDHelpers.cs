@@ -1,7 +1,6 @@
 ﻿using AuthServer.ViewModel;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
-using System.Diagnostics;
 using System.Security.Claims;
 using System.Security.Principal;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -53,24 +52,6 @@ public static class OpenIDHelpers
                 yield return Destinations.AccessToken;
                 yield break;
         }
-    }
-
-    /// <summary>
-    /// Determines whether the client is configured to use PKCE.
-    /// </summary>
-    /// <param name="manager">The store.</param>
-    /// <param name="client_id">The client identifier.</param>
-    /// <returns></returns>
-    public static async Task<bool> IsPkceClientAsync(this IOpenIddictApplicationManager manager, string client_id)
-    {
-        if (!string.IsNullOrWhiteSpace(client_id))
-        {
-            var client = await manager.FindByClientIdAsync(client_id);
-            return true;
-            //TODO: return client?.RequirePkce == true;
-        }
-
-        return false;
     }
 
     public static IActionResult LoadingPage(this Controller controller, string viewName, string redirectUri)

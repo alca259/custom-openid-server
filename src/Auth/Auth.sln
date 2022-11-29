@@ -5,7 +5,9 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthServer", "AuthServer\AuthServer.csproj", "{07DFA141-3297-4D8E-B482-0DA9EA9C1001}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthDefaultClient", "AuthDefaultClient\AuthDefaultClient.csproj", "{2D5C672F-2586-4E39-BD39-9EDDCA14E12E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthDefaultClient", "AuthDefaultClient\AuthDefaultClient.csproj", "{2D5C672F-2586-4E39-BD39-9EDDCA14E12E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthApiClient", "AuthApiClient\AuthApiClient.csproj", "{A60BE0CE-A5DD-40DA-953A-AC6EBAD3D529}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{2D5C672F-2586-4E39-BD39-9EDDCA14E12E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D5C672F-2586-4E39-BD39-9EDDCA14E12E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D5C672F-2586-4E39-BD39-9EDDCA14E12E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A60BE0CE-A5DD-40DA-953A-AC6EBAD3D529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A60BE0CE-A5DD-40DA-953A-AC6EBAD3D529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A60BE0CE-A5DD-40DA-953A-AC6EBAD3D529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A60BE0CE-A5DD-40DA-953A-AC6EBAD3D529}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

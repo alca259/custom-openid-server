@@ -1,10 +1,8 @@
 ﻿using AuthServer.Infrastructure.Domain.Identity;
 using AuthServer.Services;
 using AuthServer.ViewModel;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Abstractions;
 using System.Security.Principal;
 
 namespace AuthServer.Controllers;
@@ -12,18 +10,15 @@ namespace AuthServer.Controllers;
 [Route("account")]
 public sealed class AccountController : Controller
 {
-    private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly UserManager<User> _userManager;
     private readonly ILoginService<User> _loginService;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
-        IOpenIddictApplicationManager applicationManager,
         UserManager<User> userManager,
         ILoginService<User> loginService,
         ILogger<AccountController> logger)
     {
-        _applicationManager = applicationManager;
         _userManager = userManager;
         _loginService = loginService;
         _logger = logger;
@@ -86,28 +81,15 @@ public sealed class AccountController : Controller
 
     private async Task<IActionResult> RedirectSuccessLogin(string returnUrl, bool rememberLogin, User userApp, bool signIn = true)
     {
-        // check if we are in the context of an authorization request
-        var request = HttpContext.GetOpenIddictServerRequest();
-
         _logger.LogDebug("User: {User} RedirectSuccessLogin", userApp.UserName);
 
         if (signIn)
             await _loginService.SignInAsync(userApp, returnUrl, rememberLogin);
 
-        if (request != null)
-        {
-            if (await _applicationManager.IsPkceClientAsync(request.ClientId))
-            {
-                return this.LoadingPage("Redirect", returnUrl);
-            }
-
-            return Redirect(returnUrl);
-        }
-
-        return RedirectToHomepage(returnUrl, userApp);
+        return RedirectToHomepage(returnUrl);
     }
 
-    private string GetRedirectUrlToHomepage(string returnUrl = null, User userApp = null)
+    private string GetRedirectUrlToHomepage(string returnUrl = null)
     {
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
@@ -118,8 +100,8 @@ public sealed class AccountController : Controller
         return returnUrl;
     }
 
-    private IActionResult RedirectToHomepage(string returnUrl = null, User userApp = null)
+    private IActionResult RedirectToHomepage(string returnUrl = null)
     {
-        return Redirect(GetRedirectUrlToHomepage(returnUrl, userApp));
+        return Redirect(GetRedirectUrlToHomepage(returnUrl));
     }
 }

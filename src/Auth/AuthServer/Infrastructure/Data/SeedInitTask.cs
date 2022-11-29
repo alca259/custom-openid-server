@@ -24,6 +24,8 @@ public sealed class SeedInitTask : IHostedService
         await ctx.Database.EnsureCreatedAsync(cancellationToken);
 
         await CreateDefaultClient(scope, cancellationToken);
+        await CreateDefaultApiClient(scope, cancellationToken);
+        await CreateSwaggerClient(scope, cancellationToken);
         await CreateAngularClient(scope, cancellationToken);
         await RegisterScopes(scope, cancellationToken);
         await CreateDefaultUser(scope);
@@ -47,6 +49,66 @@ public sealed class SeedInitTask : IHostedService
             {
                 Permissions.Endpoints.Token,
                 Permissions.GrantTypes.ClientCredentials
+            }
+        }, cancellationToken);
+    }
+
+    private static async Task CreateDefaultApiClient(IServiceScope scope, CancellationToken cancellationToken)
+    {
+        var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+
+        var existDefaultAppClient = await manager.FindByClientIdAsync("default-api-client", cancellationToken);
+        if (existDefaultAppClient != null) return;
+
+        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        {
+            ClientId = "default-api-client",
+            ClientSecret = "11111111-54AE-4044-8E05-07044FD96943",
+            DisplayName = "Auth Server API Client",
+            Permissions =
+            {
+                Permissions.Endpoints.Authorization,
+                Permissions.Endpoints.Logout,
+                Permissions.Endpoints.Token,
+                Permissions.Endpoints.Introspection,
+                Permissions.GrantTypes.ClientCredentials,
+                $"{Permissions.Prefixes.Scope}API"
+            }
+        }, cancellationToken);
+    }
+
+    private static async Task CreateSwaggerClient(IServiceScope scope, CancellationToken cancellationToken)
+    {
+        var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+
+        var existDefaultAppClient = await manager.FindByClientIdAsync("swagger-client", cancellationToken);
+        if (existDefaultAppClient != null) return;
+
+        await manager.CreateAsync(new OpenIddictApplicationDescriptor
+        {
+            ClientId = "swagger-client",
+            ClientSecret = "22222222-1FEB-4D9B-B0EB-169E73F0987B",
+            DisplayName = "Auth Server Swagger Client",
+            ConsentType = ConsentTypes.Implicit,
+            RedirectUris =
+            {
+                new Uri("https://localhost:5201/swagger/oauth2-redirect.html"),
+                new Uri("https://localhost:5201/signin-oidc"),
+                new Uri("https://localhost:5201/signout-oidc")
+            },
+            Permissions =
+            {
+                //Permissions.Endpoints.Authorization,
+                Permissions.Endpoints.Logout,
+                Permissions.Endpoints.Token,
+                Permissions.Endpoints.Introspection,
+                Permissions.GrantTypes.Implicit,
+                Permissions.GrantTypes.RefreshToken,
+                Permissions.ResponseTypes.Token,
+                Permissions.Scopes.Email,
+                Permissions.Scopes.Profile,
+                Permissions.Scopes.Roles,
+                $"{Permissions.Prefixes.Scope}API"
             }
         }, cancellationToken);
     }
